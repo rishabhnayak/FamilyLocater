@@ -1,0 +1,107 @@
+{
+  "project_info": {
+    "project_number": "636669319189",
+    "firebase_url": "https://firstfirebase-d4c7f.firebaseio.com",
+    "project_id": "firstfirebase-d4c7f",
+    "storage_bucket": "firstfirebase-d4c7f.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:636669319189:android:f5e1007317d8350e",
+        "android_client_info": {
+          "package_name": "com.family.locator"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "636669319189-ep3p4soifof4ghit31s9l3uir40emigc.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.family.locator",
+            "certificate_hash": "3a7113d7afe33d81aff810916c207bf570e351fa"
+          }
+        },
+        {
+          "client_id": "636669319189-ils33g7h8ososp7k5h2p6s9rjmf8fbmr.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.family.locator",
+            "certificate_hash": "ca957d4168431bd5485bb42cfa8c7876ff2d5731"
+          }
+        },
+        {
+          "client_id": "636669319189-7sqam38eeark67203l15p8d991qsihbg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBLaxCd6x1smw1AnIkfIA3_mDqDBGBO57E"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "636669319189-7sqam38eeark67203l15p8d991qsihbg.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    },
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:636669319189:android:282b08ea1a4858b8",
+        "android_client_info": {
+          "package_name": "ml.rishabhnayak.myshop"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "636669319189-93kq797jkft7q9ek2v03psn4dmorr8e5.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "ml.rishabhnayak.myshop",
+            "certificate_hash": "ca957d4168431bd5485bb42cfa8c7876ff2d5731"
+          }
+        },
+        {
+          "client_id": "636669319189-7sqam38eeark67203l15p8d991qsihbg.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBLaxCd6x1smw1AnIkfIA3_mDqDBGBO57E"
+        }
+      ],
+      "services": {
+        "analytics_service": {
+          "status": 1
+        },
+        "appinvite_service": {
+          "status": 2,
+          "other_platform_oauth_client": [
+            {
+              "client_id": "636669319189-7sqam38eeark67203l15p8d991qsihbg.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        },
+        "ads_service": {
+          "status": 2
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

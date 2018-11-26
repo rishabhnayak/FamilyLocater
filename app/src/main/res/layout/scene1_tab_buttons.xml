@@ -1,0 +1,113 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout
+    android:background="@color/colorPrimaryDark"
+    xmlns:android="http://schemas.android.com/apk/res/android" android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+ <LinearLayout
+     android:gravity="center_vertical"
+     android:orientation="vertical"
+     android:id="@+id/hopistal"
+     android:onClick="onClick"
+     android:layout_weight="1"
+     android:background="?attr/selectableItemBackground"
+     android:clickable="true"
+     android:layout_width="wrap_content"
+     android:layout_height="match_parent">
+    <ImageView
+        android:layout_gravity="center_horizontal"
+        android:id="@+id/hos"
+        android:src="@drawable/ic_local_hospital_black_24dp"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        />
+     <TextView
+         android:id="@+id/thospital"
+         android:textSize="7sp"
+         android:layout_gravity="center_horizontal"
+         android:textAllCaps="true"
+         android:text="hospital"
+         android:textColor="#ffffff"
+         android:layout_width="wrap_content"
+         android:layout_height="wrap_content" />
+ </LinearLayout>
+    <LinearLayout
+        android:gravity="center_vertical"
+        android:orientation="vertical"
+        android:id="@+id/bank"
+        android:onClick="onClick"
+        android:layout_weight="1"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent">
+        <ImageView
+            android:layout_gravity="center_horizontal"
+            android:src="@drawable/ic_account_balance_black_24dp"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            />
+        <TextView
+            android:id="@+id/tbank"
+            android:textSize="7sp"
+            android:layout_gravity="center_horizontal"
+            android:textAllCaps="true"
+            android:text="bank"
+            android:textColor="#ffffff"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+    <LinearLayout
+        android:gravity="center_vertical"
+        android:orientation="vertical"
+        android:id="@+id/school"
+        android:onClick="onClick"
+        android:layout_weight="1"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent">
+        <ImageView
+            android:layout_gravity="center_horizontal"
+            android:src="@drawable/ic_school_black_24dp"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            />
+        <TextView
+            android:id="@+id/tschool"
+            android:textSize="7sp"
+            android:layout_gravity="center_horizontal"
+            android:textAllCaps="true"
+            android:text="school"
+            android:textColor="#ffffff"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+    <LinearLayout
+        android:gravity="center_vertical"
+        android:orientation="vertical"
+        android:id="@+id/cafe"
+        android:onClick="onClick"
+        android:layout_weight="1"
+        android:background="?attr/selectableItemBackground"
+        android:clickable="true"
+        android:layout_width="wrap_content"
+        android:layout_height="match_parent">
+        <ImageView
+            android:layout_gravity="center_horizontal"
+            android:src="@drawable/ic_local_cafe_black_24dp"
+            android:layout_width="24dp"
+            android:layout_height="24dp"
+            />
+        <TextView
+            android:id="@+id/tcafe"
+            android:textSize="7sp"
+            android:layout_gravity="center_horizontal"
+            android:textAllCaps="true"
+            android:text="cafe"
+            android:textColor="#ffffff"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content" />
+    </LinearLayout>
+
+</LinearLayout>

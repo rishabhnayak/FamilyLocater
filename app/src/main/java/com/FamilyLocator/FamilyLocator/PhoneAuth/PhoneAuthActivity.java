@@ -1,0 +1,545 @@
+package com.FamilyLocator.FamilyLocator.PhoneAuth;
+
+/**
+ * Created by RAJA on 22-04-2018.
+ */
+
+import android.Manifest;
+import android.app.AlertDialog;
+import android.content.Context;
+import android.content.DialogInterface;
+import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.net.ConnectivityManager;
+import android.net.NetworkInfo;
+import android.os.Bundle;
+import android.support.annotation.NonNull;
+import android.support.design.widget.Snackbar;
+import android.support.v4.app.ActivityCompat;
+import android.support.v4.content.ContextCompat;
+import android.support.v7.app.AppCompatActivity;
+import android.text.TextUtils;
+import android.util.Log;
+import android.view.View;
+import android.view.ViewGroup;
+import android.widget.Button;
+import android.widget.EditText;
+import android.widget.TextView;
+import android.widget.Toast;
+
+import com.FamilyLocator.FamilyLocator.R;
+import com.crashlytics.android.Crashlytics;
+import com.google.android.gms.tasks.OnCompleteListener;
+import com.google.android.gms.tasks.Task;
+import com.google.firebase.FirebaseException;
+import com.google.firebase.FirebaseTooManyRequestsException;
+import com.google.firebase.auth.AuthResult;
+import com.google.firebase.auth.FirebaseAuth;
+import com.google.firebase.auth.FirebaseAuthInvalidCredentialsException;
+import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.auth.PhoneAuthCredential;
+import com.google.firebase.auth.PhoneAuthProvider;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.FamilyLocator.FamilyLocator.MainActivity;
+import com.podcopic.animationlib.library.AnimationType;
+import com.podcopic.animationlib.library.StartSmartAnimation;
+
+import java.util.concurrent.TimeUnit;
+
+import static com.FamilyLocator.FamilyLocator.SearchPlacesNearMe.MapsActivity.REQUEST_LOCATION_CODE;
+
+public class PhoneAuthActivity extends AppCompatActivity implements
+        View.OnClickListener {
+    private static final String TAG = "PhoneAuthActivity";
+
+    private static final String KEY_VERIFY_IN_PROGRESS = "key_verify_in_progress";
+
+    private static final int STATE_INITIALIZED = 1;
+
+
+    @Override
+    public void onBackPressed() {
+        Intent intent=new Intent(Intent.ACTION_MAIN);
+        intent.addCategory(Intent.CATEGORY_HOME);
+        intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+        startActivity(intent);
+      //  overridePendingTransition(R.anim.fade_in,R.anim.fade_out);
+    }
+
+    private static final int STATE_CODE_SENT = 2;
+    private static final int STATE_VERIFY_FAILED = 3;
+    private static final int STATE_VERIFY_SUCCESS = 4;
+    private static final int STATE_SIGNIN_FAILED = 5;
+    private static final int STATE_SIGNIN_SUCCESS = 6;
+
+    // [START declare_auth]
+    private FirebaseAuth mAuth;
+    // [END declare_auth]
+
+    private boolean mVerificationInProgress = false;
+    private String mVerificationId;
+    private PhoneAuthProvider.ForceResendingToken mResendToken;
+    private PhoneAuthProvider.OnVerificationStateChangedCallbacks mCallbacks;
+
+    private ViewGroup mPhoneNumberViews;
+    private ViewGroup mSignedInViews;
+
+    private TextView mStatusText;
+    private TextView mDetailText;
+
+    EditText mPhoneNumberField,code;
+    private EditText mVerificationField;
+
+    private TextView mStartButton;
+    private TextView mVerifyButton;
+    private Button mResendButton;
+    private Button mSignOutButton;
+    DatabaseReference firebaseDatabase;
+    EditText username,useraddress;
+    String number;
+
+    @Override
+    protected void onResume() {
+        //check location permission
+        checkLocationPermission();
+        super.onResume();
+    }
+
+    @Override
+    protected void onCreate(Bundle savedInstanceState) {
+        super.onCreate(savedInstanceState);
+        Crashlytics.getInstance();
+        setContentView(R.layout.activity_phone_auth);
+        if (savedInstanceState != null) {
+            onRestoreInstanceState(savedInstanceState);
+        }
+        firebaseDatabase= FirebaseDatabase.getInstance().getReference();
+
+        mPhoneNumberViews = findViewById(R.id.phone_auth_fields);
+        mSignedInViews = findViewById(R.id.signed_in_buttons);
+
+        mStatusText = findViewById(R.id.status);
+        mDetailText = findViewById(R.id.detail);
+
+        mPhoneNumberField = findViewById(R.id.field_phone_number);
+        mVerificationField = findViewById(R.id.field_verification_code);
+
+        mStartButton = findViewById(R.id.button_start_verification);
+        mVerifyButton = findViewById(R.id.button_verify_phone);
+        mResendButton = findViewById(R.id.button_resend);
+        mSignOutButton = findViewById(R.id.sign_out_button);
+        code = findViewById(R.id.code);
+        disableViews(code);
+
+
+        // Assign click listeners
+        mStartButton.setOnClickListener(this);
+        mVerifyButton.setOnClickListener(this);
+        mResendButton.setOnClickListener(this);
+        mSignOutButton.setOnClickListener(this);
+//animations
+       // findViewById(R.id.phone_auth_fields).setVisibility(View.GONE);
+//        final Handler handler = new Handler();
+//        handler.postDelayed(new Runnable() {
+//            @Override
+//            public void run() {
+//                //Do something after 100ms
+//                findViewById(R.id.phone_auth_fields).setVisibility(View.VISIBLE);
+                StartSmartAnimation.startAnimation( findViewById(R.id.phone_auth_fields) , AnimationType.BounceInUp , 2000 , 00 , true );
+//            }
+//        }, 200);
+
+        getSupportActionBar().hide();
+        //detect internet and show the data
+        if(isNetworkStatusAvialable (getApplicationContext())) {
+            //  Toast.makeText(getApplicationContext(), "Internet detected", Toast.LENGTH_SHORT).show();
+        } else {
+// Instantiate an AlertDialog.Builder with its constructor
+
+            AlertDialog.Builder alertDialogBuilder = new AlertDialog.Builder(this);
+            alertDialogBuilder.setTitle("NO INTERNET");
+            alertDialogBuilder.setMessage("PLEASE CHECK YOUR INTERNET CONNECTION");
+            alertDialogBuilder.setCancelable(false);
+            alertDialogBuilder.setIcon(android.R.drawable.ic_dialog_alert);
+            alertDialogBuilder.setPositiveButton("OK", new DialogInterface.OnClickListener() {
+                public void onClick(DialogInterface dialog, int which) {
+                }
+            });
+            alertDialogBuilder.show();
+        }
+
+
+        // [START initialize_auth]
+        mAuth = FirebaseAuth.getInstance();
+        // [END initialize_auth]
+        mCallbacks = new PhoneAuthProvider.OnVerificationStateChangedCallbacks() {
+
+            @Override
+            public void onVerificationCompleted(PhoneAuthCredential credential) {
+                // This callback will be invoked in two situations:
+                // 1 - Instant verification. In some cases the phone number can be instantly
+                //     verified without needing to send or enter a verification code.
+                // 2 - Auto-retrieval. On some devices Google Play services can automatically
+                //     detect the incoming verification SMS and perform verificaiton without
+                //     user action.
+                Log.d(TAG, "onVerificationCompleted:" + credential);
+                // [START_EXCLUDE silent]
+                mVerificationInProgress = false;
+                // [END_EXCLUDE]
+
+                // [START_EXCLUDE silent]
+                // Update the UI and attempt sign in with the phone credential
+                updateUI(STATE_VERIFY_SUCCESS, credential);
+                // [END_EXCLUDE]
+                signInWithPhoneAuthCredential(credential);
+            }
+
+            @Override
+            public void onVerificationFailed(FirebaseException e) {
+                // This callback is invoked in an invalid request for verification is made,
+                // for instance if the the phone number format is not valid.
+                Log.w(TAG, "onVerificationFailed", e);
+                // [START_EXCLUDE silent]
+                mVerificationInProgress = false;
+                // [END_EXCLUDE]
+
+                if (e instanceof FirebaseAuthInvalidCredentialsException) {
+                    // Invalid request
+                    // [START_EXCLUDE]
+                    mPhoneNumberField.setError("Invalid phone number.");
+                    // [END_EXCLUDE]
+                } else if (e instanceof FirebaseTooManyRequestsException) {
+                    // The SMS quota for the project has been exceeded
+                    // [START_EXCLUDE]
+                    Snackbar.make(findViewById(android.R.id.content), "Quota exceeded.",
+                            Snackbar.LENGTH_SHORT).show();
+                    // [END_EXCLUDE]
+                }
+
+                // Show a message and update the UI
+                // [START_EXCLUDE]
+                updateUI(STATE_VERIFY_FAILED);
+                // [END_EXCLUDE]
+            }
+
+            @Override
+            public void onCodeSent(String verificationId,
+                                   PhoneAuthProvider.ForceResendingToken token) {
+                // The SMS verification code has been sent to the provided phone number, we
+                // now need to ask the user to enter the code and then construct a credential
+                // by combining the code with a verification ID.
+                Log.d(TAG, "onCodeSent:" + verificationId);
+
+                // Save verification ID and resending token so we can use them later
+                mVerificationId = verificationId;
+                mResendToken = token;
+
+                // [START_EXCLUDE]
+                // Update UI
+                updateUI(STATE_CODE_SENT);
+                // [END_EXCLUDE]
+            }
+        };
+    }
+    @Override
+    public void onStart() {
+        super.onStart();
+        // Check if user is signed in (non-null) and update UI accordingly.
+        FirebaseUser currentUser = mAuth.getCurrentUser();
+        updateUI(currentUser);
+
+        // [START_EXCLUDE]
+        if (mVerificationInProgress && validatePhoneNumber()) {
+            startPhoneNumberVerification(number);
+        }
+        // [END_EXCLUDE]
+    }
+
+    @Override
+    protected void onSaveInstanceState(Bundle outState) {
+        super.onSaveInstanceState(outState);
+        outState.putBoolean(KEY_VERIFY_IN_PROGRESS, mVerificationInProgress);
+    }
+
+    @Override
+    protected void onRestoreInstanceState(Bundle savedInstanceState) {
+        super.onRestoreInstanceState(savedInstanceState);
+        mVerificationInProgress = savedInstanceState.getBoolean(KEY_VERIFY_IN_PROGRESS);
+    }
+    private void startPhoneNumberVerification(String phoneNumber) {
+        // [START start_phone_auth]
+        PhoneAuthProvider.getInstance().verifyPhoneNumber(
+                phoneNumber,        // Phone number to verify
+                60,                 // Timeout duration
+                TimeUnit.SECONDS,   // Unit of timeout
+                this,               // Activity (for callback binding)
+                mCallbacks);        // OnVerificationStateChangedCallbacks
+        // [END start_phone_auth]
+
+        mVerificationInProgress = true;
+    }
+    private void verifyPhoneNumberWithCode(String verificationId, String code) {
+        // [START verify_with_code]
+        PhoneAuthCredential credential = PhoneAuthProvider.getCredential(verificationId, code);
+        // [END verify_with_code]
+        signInWithPhoneAuthCredential(credential);
+    }
+    private void resendVerificationCode(String phoneNumber,
+                                        PhoneAuthProvider.ForceResendingToken token) {
+        PhoneAuthProvider.getInstance().verifyPhoneNumber(
+                phoneNumber,        // Phone number to verify
+                60,                 // Timeout duration
+                TimeUnit.SECONDS,   // Unit of timeout
+                this,               // Activity (for callback binding)
+                mCallbacks,         // OnVerificationStateChangedCallbacks
+                token);             // ForceResendingToken from callbacks
+    }
+    private void signInWithPhoneAuthCredential(PhoneAuthCredential credential) {
+        mAuth.signInWithCredential(credential)
+                .addOnCompleteListener(this, new OnCompleteListener<AuthResult>() {
+                    @Override
+                    public void onComplete(@NonNull Task<AuthResult> task) {
+                        if (task.isSuccessful()) {
+                            // Sign in success, update UI with the signed-in user's information
+                            Log.d(TAG, "signInWithCredential:success");
+
+                            FirebaseUser user = task.getResult().getUser();
+                            // [START_EXCLUDE]
+                            updateUI(STATE_SIGNIN_SUCCESS, user);
+                            // [END_EXCLUDE]
+                        } else {
+                            // Sign in failed, display a message and update the UI
+                            Log.w(TAG, "signInWithCredential:failure", task.getException());
+                            if (task.getException() instanceof FirebaseAuthInvalidCredentialsException) {
+                                // The verification code entered was invalid
+                                // [START_EXCLUDE silent]
+                                mVerificationField.setError("Invalid code.");
+                                // [END_EXCLUDE]
+                            }
+                            // [START_EXCLUDE silent]
+                            // Update UI
+                            updateUI(STATE_SIGNIN_FAILED);
+                            // [END_EXCLUDE]
+                        }
+                    }
+                });
+    }
+    private void signOut() {
+        mAuth.signOut();
+        updateUI(STATE_INITIALIZED);
+    }
+
+    private void updateUI(int uiState) {
+        updateUI(uiState, mAuth.getCurrentUser(), null);
+    }
+
+    private void updateUI(FirebaseUser user) {
+        if (user != null) {
+            updateUI(STATE_SIGNIN_SUCCESS, user);
+        } else {
+            updateUI(STATE_INITIALIZED);
+        }
+    }
+
+    private void updateUI(int uiState, FirebaseUser user) {
+        updateUI(uiState, user, null);
+    }
+
+    private void updateUI(int uiState, PhoneAuthCredential cred) {
+        updateUI(uiState, null, cred);
+    }
+
+    private void updateUI(int uiState, FirebaseUser user, PhoneAuthCredential cred) {
+        switch (uiState) {
+            case STATE_INITIALIZED:
+                // Initialized state, show only the phone number field and start button
+                enableViews(mStartButton, mPhoneNumberField);
+                disableViews(mResendButton, mVerificationField);
+//                mVerifyButton.setVisibility(View.GONE);
+                findViewById(R.id.card_verify).setVisibility(View.GONE);
+
+                mDetailText.setText(null);
+                break;
+            case STATE_CODE_SENT:
+                // Code sent state, show the verification field, the
+                enableViews(mResendButton, mVerificationField);
+                disableViews(mStartButton, mPhoneNumberField);
+//                mVerifyButton.setVisibility(View.VISIBLE);
+                findViewById(R.id.card_verify).setVisibility(View.VISIBLE);
+                findViewById(R.id.card_send).setVisibility(View.GONE);
+                mDetailText.setText("status_code_sent");
+                break;
+            case STATE_VERIFY_FAILED:
+                // Verification has failed, show all options
+                enableViews(mStartButton, mResendButton, mPhoneNumberField,
+                        mVerificationField);
+
+                mDetailText.setText("status_verification_failed");
+               // mVerifyButton.setVisibility(View.VISIBLE);
+                findViewById(R.id.card_verify).setVisibility(View.VISIBLE);
+                findViewById(R.id.card_send).setVisibility(View.GONE);
+                break;
+            case STATE_VERIFY_SUCCESS:
+                // Verification has succeeded, proceed to firebase sign in
+                disableViews(mStartButton, mResendButton, mPhoneNumberField,
+                        mVerificationField);
+                mDetailText.setText("status_verification_succeeded");
+                mVerifyButton.setVisibility(View.GONE);
+                findViewById(R.id.card_verify).setVisibility(View.GONE);
+                // Set the verification text based on the credential
+                if (cred != null) {
+                    if (cred.getSmsCode() != null) {
+                        mVerificationField.setText(cred.getSmsCode());
+                    } else {
+                        mVerificationField.setText("VERIFIED");
+                    }
+                }
+
+                break;
+            case STATE_SIGNIN_FAILED:
+                enableViews(mStartButton, mResendButton,
+                        mVerificationField);
+                disableViews( mPhoneNumberField);
+                // No-op, handled by sign-in check
+                mDetailText.setText("status_sign_in_failed");
+                //mVerifyButton.setVisibility(View.VISIBLE);
+                findViewById(R.id.card_verify).setVisibility(View.VISIBLE);
+                findViewById(R.id.card_send).setVisibility(View.GONE);
+               // Toast.makeText(this, "Sign In Failed", Toast.LENGTH_SHORT).show();
+                break;
+            case STATE_SIGNIN_SUCCESS:
+                // Np-op, handled by sign-in check
+                Intent intent=new Intent(getApplicationContext(), MainActivity.class);
+//                intent.putExtra("uid",mAuth.getCurrentUser().getUid());
+                intent.putExtra("number",number);
+                startActivity(intent);
+                break;
+        }
+
+        if (user == null) {
+            // Signed out
+            mPhoneNumberViews.setVisibility(View.VISIBLE);
+            mSignedInViews.setVisibility(View.GONE);
+
+            mStatusText.setText("signed_out");
+        } else if (user!=null){
+            // Signed in
+            mPhoneNumberViews.setVisibility(View.GONE);
+            mSignedInViews.setVisibility(View.VISIBLE);
+
+            enableViews(mPhoneNumberField, mVerificationField);
+            mPhoneNumberField.setText(null);
+            mVerificationField.setText(null);
+
+            mStatusText.setText("signed_in");
+//            mDetailText.setText(getString(R.string.firebase_status_fmt, user.getUid()));
+
+
+
+
+            Intent intent=new Intent(getApplicationContext(), MainActivity.class);
+//            intent.putExtra("uid",mAuth.getCurrentUser().getUid());
+            intent.putExtra("number",number);
+            startActivity(intent);
+        }
+    }
+    private boolean validatePhoneNumber() {
+        String phoneNumber = mPhoneNumberField.getText().toString();
+        if (TextUtils.isEmpty(phoneNumber)||phoneNumber.length()!=10) {
+            mPhoneNumberField.setError("phone number must have 10 digits");
+            return false;
+        }
+
+        return true;
+    }
+    private void enableViews(View... views) {
+        for (View v : views) {
+            v.setEnabled(true);
+        }
+    }
+
+    private void disableViews(View... views) {
+        for (View v : views) {
+            v.setEnabled(false);
+        }
+    }
+    @Override
+    public void onClick(View view) {
+        switch (view.getId()) {
+            case R.id.button_start_verification:
+                if (!validatePhoneNumber()) {
+                    return;
+                }
+                number = mPhoneNumberField.getText().toString();
+                startPhoneNumberVerification("+91"+number);
+                break;
+            case R.id.button_verify_phone:
+                String code = mVerificationField.getText().toString();
+                if (TextUtils.isEmpty(code)) {
+                    mVerificationField.setError("Cannot be empty.");
+                    return;
+                }
+
+                verifyPhoneNumberWithCode(mVerificationId, code);
+                break;
+            case R.id.button_resend:
+                resendVerificationCode("+91"+mPhoneNumberField.getText().toString(), mResendToken);
+                break;
+            case R.id.sign_out_button:
+                signOut();
+                break;
+        }
+    }
+    public static boolean isNetworkStatusAvialable (Context context) {
+        ConnectivityManager connectivityManager = (ConnectivityManager) context.getSystemService(Context.CONNECTIVITY_SERVICE);
+        if (connectivityManager != null)
+        {
+            NetworkInfo netInfos = connectivityManager.getActiveNetworkInfo();
+            if(netInfos != null)
+            {
+                return netInfos.isConnected();
+            }
+        }
+        return false;
+    }
+    //permission Location...............................................................................
+    public boolean checkLocationPermission()
+    {
+        if(ContextCompat.checkSelfPermission(this, Manifest.permission.ACCESS_FINE_LOCATION)  != PackageManager.PERMISSION_GRANTED )
+        {
+
+            if (ActivityCompat.shouldShowRequestPermissionRationale(this,Manifest.permission.ACCESS_FINE_LOCATION))
+            {
+                ActivityCompat.requestPermissions(this,new String[] {Manifest.permission.ACCESS_FINE_LOCATION },REQUEST_LOCATION_CODE);
+            }
+            else
+            {
+                ActivityCompat.requestPermissions(this,new String[] {Manifest.permission.ACCESS_FINE_LOCATION },REQUEST_LOCATION_CODE);
+            }
+            return false;
+
+        }
+        else
+            return true;
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode, @NonNull String[] permissions, @NonNull int[] grantResults) {
+        switch(requestCode)
+        {
+            case REQUEST_LOCATION_CODE:
+                if(grantResults.length >0 && grantResults[0] == PackageManager.PERMISSION_GRANTED)
+                {
+                    Toast.makeText(this, "you can access", Toast.LENGTH_SHORT).show();
+                }
+                else
+                {
+                    Toast.makeText(this, "Location access denied", Toast.LENGTH_SHORT).show();
+                    finish();
+                }
+        }
+    }
+//..................................................................................................
+
+}

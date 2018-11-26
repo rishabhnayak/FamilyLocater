@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto">
+    <!--<item-->
+        <!--android:icon="@drawable/ic_stars_black_24dp"-->
+        <!--android:id="@+id/rate"-->
+        <!--app:showAsAction="always"-->
+        <!--android:title="Profile">-->
+    <!--</item>-->
+
+    <item
+        android:icon="@drawable/ic_share_black_24dp"
+        android:id="@+id/share"
+        app:showAsAction="always"
+        android:title="Refresh">
+    </item>
+
+</menu>
